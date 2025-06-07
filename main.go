@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"github.com/ProbsPropps/pokedexcli/internal/pokeapi"
 )
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
+	locations, err := pokeapi.GetLocations("https://pokeapi.co/api/v2/location-area/")
+		if err != nil {
+		fmt.Errorf("the api is not working correctly: couldn't gather locations: %v", err)
+	}
+	locPtr := &locations
+
 	var commands = map[string]cliCommand{
 		"exit": {
 			name: "exit",
@@ -40,18 +47,37 @@ func main() {
 		if ok {
 			switch command.name {
 			case "exit": 
-				err := command.callback()
+				err := command.callback(locPtr)
 				if err != nil {
 					fmt.Println("Error encountered when running the command")
 				}
 			case "help":
-				err := command.callback()
+				err := command.callback(locPtr)
 				if err != nil {
 					fmt.Println("Error encountered when running the command")
 				}
 				for key, val := range commands {
 					fmt.Printf("%v: %v\n", key, val.description)
 				}
+			case "map":
+				err := command.callback(locPtr)
+				if err != nil {
+					fmt.Println("Error encountered when running the command")
+				}
+				locations, err = pokeapi.GetLocations(*locations.NextURL)
+				if err != nil {
+					fmt.Println("You've reached the end of the location list")
+				} else{ locPtr = &locations }
+			case "mapb":
+				err := command.callback(locPtr)
+				if err != nil {
+					fmt.Println("Error encountered when running the command")
+				}
+				locations, err = pokeapi.GetLocations(*locations.PreviousURL)
+				if err != nil {
+					fmt.Println("You're at the beginning of the location list")
+				} else { locPtr = &locations}
+				
 			}
 		} else {
 			fmt.Println("Unknown command")
@@ -65,29 +91,45 @@ func cleanInput(text string) []string {
 	return test
 }
 
-func commandExit() error {
+func commandExit(locations *pokeapi.LocationArea) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp() error {
+func commandHelp(locations *pokeapi.LocationArea) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:\n")
 	return nil
 
 }
 
-func commandMap() error {
+func commandMap(locations *pokeapi.LocationArea) error {
+	data := locations.Results
+	for _, name := range(data) {
+		fmt.Println(name.Name)
+	}
 	return nil
 }
 
-func commandMapb() error {
+func commandMapb(locations *pokeapi.LocationArea) error {
+	data := locations.Results
+	for _, name := range(data) {
+		fmt.Println(name.Name)
+	}
 	return nil
 }
 
 type cliCommand struct {
-	name string
+	name 		string
 	description string
-	callback func() error
+	callback func(l *pokeapi.LocationArea) error
 }
+
+type config struct {
+	next		*string
+	previous	*string
+}
+
+
+
