@@ -6,11 +6,12 @@ import (
 )
 
 type Cache struct {
-	Data map[string]cacheEntry
-	Mux sync.Mutex
+	Data 		map[string]cacheEntry
+	Mux 		sync.Mutex
+	Duration 	time.Duration
 }
 
 type cacheEntry struct {
-	createAt 	time.Time
+	createdAt 	time.Time
 	val 		[]byte
 }
