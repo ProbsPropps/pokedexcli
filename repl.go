@@ -21,19 +21,25 @@ func startRepl(cfg *config) {
 		reader.Scan()
 
 		words := cleanInput(reader.Text())
+		
 		if len(words) == 0 {
 			continue
 		}
-
+		
 		commandName := words[0]
 
 		command, exists := getCommands()[commandName]
+
 		if exists {
-			err := command.callback(cfg)
-			if err != nil {
-				fmt.Println(err)
-			}
-			continue
+			if command.needsMultiple {
+				if len(words) == 1 {
+					fmt.Println("Missing argument for command")
+					continue
+				}
+				command.callback(cfg, words[1])
+				continue
+			} 
+			command.callback(cfg, "")
 		} else {
 			fmt.Println("Unknown command")
 			continue
@@ -48,9 +54,10 @@ func cleanInput(text string) []string {
 }
 
 type cliCommand struct {
-	name string
-	description string
-	callback func(cfg *config) error
+	name 			string
+	description 	string
+	callback 		func(cfg *config, str string) error
+	needsMultiple	bool
 }
 
 func getCommands() map[string]cliCommand {
@@ -59,21 +66,31 @@ func getCommands() map[string]cliCommand {
 			name: "help",
 			description: "Displays a help message",
 			callback: commandHelp,
+			needsMultiple: false,
 		},
 		"exit": {
 			name: "exit",
 			description: "Exit the Pokedex",
 			callback: commandExit,
+			needsMultiple: false,
 		},
 		"map": {
 			name: "map",
 			description: "Get the next 20 locations",
 			callback: commandMapf,
+			needsMultiple: false,
 		},
 		"mapb": {
 			name: "mapb",
 			description: "Get the previous 20 locations",
 			callback: commandMapb,
+			needsMultiple: false,
+		},
+		"explore": {
+			name: "explore",
+			description: "Explore a region to find the natural Pokemon",
+			callback: commandExplore,
+			needsMultiple: true,
 		},
 	}
 }
