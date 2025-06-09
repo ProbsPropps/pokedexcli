@@ -12,10 +12,13 @@ type config struct {
 	pokeapiClient 	pokeapi.Client
 	nextURL 		*string
 	previousURL 	*string
+	caughtPokemon 	map[string]pokeapi.ShallowPokemon
 }
 
 func startRepl(cfg *config) {
 	reader := bufio.NewScanner(os.Stdin)
+	pokeCaught := make(map[string]pokeapi.ShallowPokemon)
+	cfg.caughtPokemon = pokeCaught
 	for {
 		fmt.Print("Pokedex > ")
 		reader.Scan()
@@ -36,7 +39,10 @@ func startRepl(cfg *config) {
 					fmt.Println("Missing argument for command")
 					continue
 				}
-				command.callback(cfg, words[1])
+				err := command.callback(cfg, words[1])
+				if err != nil {
+					fmt.Println(err)
+				}
 				continue
 			} 
 			command.callback(cfg, "")
@@ -91,6 +97,24 @@ func getCommands() map[string]cliCommand {
 			description: "Explore a region to find the natural Pokemon",
 			callback: commandExplore,
 			needsMultiple: true,
+		},
+		"catch": {
+			name: "catch",
+			description: "Try to catch a pokemon!",
+			callback: commandCatch,
+			needsMultiple: true,
+		},
+		"inspect": {
+			name: "inspect",
+			description: "Look at a Pokemon's Pokedex record",
+			callback: commandInspect,
+			needsMultiple: true,
+		},
+		"pokedex": {
+			name: "pokedex",
+			description: "See what you have in your Pokedex",
+			callback: commandPokedex,
+			needsMultiple: false,
 		},
 	}
 }
